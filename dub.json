@@ -1,0 +1,10 @@
+{
+	"authors": [
+		"Dmitry Olshansky"
+	],
+	"targetType": "library",
+	"copyright": "Copyright © 2024, Dmitry Olshansky",
+	"description": "Extensible self-loading buffer",
+	"license": "BSL-1.0",
+	"name": "xbuf"
+}
