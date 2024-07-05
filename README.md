@@ -9,7 +9,7 @@ The key parameters are:
 * `growBy` - granularity of allocation, uses OS page size by default
 
 The application can manipulate contents of the buffer by calling `load`, `resize` and `compact`.  Load loads more data into the buffer, extending the buffer to load at least `minLoading` bytes. `load` is potentially blocking if loader is doing synchronious I/O.
-`resize` allows application to manually resize the buffer for instance to shrink the buffer or to more agressively extend the buffer - for instance if the protocol contains payload size. `compact` discards a number of bytes up to `size`, it should be called by application after it processed a number of bytes and no longer needs. `compact` invalidates all slices into buffer be careful not to `compact` while holding references to the buffer.
+`resize` allows application to manually resize the buffer for instance to shrink the buffer or to more agressively extend the buffer - for instance if the protocol contains payload size. `compact` discards a number of bytes up to `size`, it should be called by application after it processed a number of bytes and no longer needs them. `compact` invalidates all slices into buffer be careful not to `compact` while holding references to the buffer.
 
 ```d
 ///
