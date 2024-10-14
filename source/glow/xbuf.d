@@ -13,6 +13,22 @@ shared static this() {
     version (linux) {
         PAGE_SIZE = getpagesize();
     }
+    else version(OSX) {
+        import core.sys.darwin.sys.sysctl;
+        import core.stdc.stdio;
+        int[6] mib; 
+        mib[0] = CTL_HW;
+        mib[1] = HW_PAGESIZE;
+
+        int pagesize;
+        size_t length;
+        length = pagesize.sizeof;
+        if (sysctl (mib.ptr, 2, &pagesize, &length, null, 0) < 0) {
+            perror("cannot get page size");
+            abort();
+        }
+        PAGE_SIZE = pagesize;
+    }
     else {
         static assert(0, "Cannot figure out the page size on this OS");
     }
@@ -60,8 +76,33 @@ public:
         return ptr[start..end];
     }
 
+    /++
+        Copy over data from start..length to dest and continue loading into dest until it's full.
+        Depending on dest.length:
+        dest.length <= length - start
+        only copy dest.length bytes of data over and return start + dest.length
+        dest.length > length - start
+        copy length - start bytes and then call loader on the rest of the buffer until its filled
+        return len
+        in case of end of stream return 0
+        and negative value on loading error
+    +/
+    ptrdiff_t fork(size_t start, ubyte[] dest) {
+        assert(start <= len);
+        size_t avail = len - start;
+        assert(dest.length >= avail);
+        dest[0..avail] = ptr[start..len];
+        for (size_t j = avail; j < dest.length;) {
+            auto res = loader(dest[j..$]);
+            if (res < 0) return res;
+            if (res == 0) return j;
+            j += res;
+        }
+        return dest.length;
+    }
+
     ///
-    size_t size() { return len; }
+    size_t length() { return len; }
 
     ///
     size_t capacity() { return _capacity; }
@@ -118,7 +159,7 @@ unittest {
     }
     buf.load();
     // capacity is 32+16 rounded to 10
-    assert(buf.size == 50);
+    assert(buf.length == 50);
     foreach (i; 0..32){
         assert(buf[i] == i);
     }
@@ -147,7 +188,7 @@ unittest {
         assert(buf[i] == i);
     }
     buf.load();
-    assert(buf.size == 50);
+    assert(buf.length == 50);
     foreach (i; 0..32) {
         assert(buf[i] == i);
     }
@@ -159,7 +200,7 @@ unittest {
         assert(buf[i-20] == i);
     }
     buf.load();
-    assert(buf.size == 50);
+    assert(buf.length == 50);
     foreach (i; 30..50) {
         assert(buf[i] == i-30);
     }
@@ -176,10 +217,10 @@ unittest {
         return 0;
     });
     assert(bnull.load() == 0);
-    assert(bnull.size == 0);
+    assert(bnull.length == 0);
     assert(bnull.growBy == PAGE_SIZE);
     bnull.compact(0);
-    assert(bnull.size == 0);
+    assert(bnull.length == 0);
 }
 
 unittest {
@@ -194,12 +235,28 @@ unittest {
         }
     });
     assert(bneg.load() == 1);
-    assert(bneg.size == 1);
+    assert(bneg.length == 1);
     assert(bneg[0] == 1);
     assert(bneg.load() == -1);
     assert(bneg.capacity == 5);
-    assert(bneg.size == 1);
+    assert(bneg.length == 1);
 }
+
+unittest {
+    import std.algorithm, std.range;
+    int i = 0;
+    XBuf buf = XBuf (8, 2, (slice) {
+        slice[0] = cast(ubyte)i++;
+        return 1;
+    });
+    buf.load();
+    buf.load();
+    ubyte[] data = new ubyte[10];
+    buf.fork(1, data);
+    assert(equal(data, iota(1, 11)));
+}
+
+
 
 unittest {
     assert(PAGE_SIZE > 0);
