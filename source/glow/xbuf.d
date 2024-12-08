@@ -47,7 +47,7 @@ private:
 public:
     @disable this(this);
     ///
-    this(uint capacity, uint minLoading, scope int delegate(ubyte[]) nothrow @nogc loader, uint growBy = 0) {
+    this(uint capacity, uint minLoading, int delegate(ubyte[]) nothrow @nogc loader, uint growBy = 0) {
         assert(capacity > 0);
         assert(minLoading > 0);
         assert(minLoading < capacity);
@@ -254,6 +254,7 @@ unittest {
     ubyte[] data = new ubyte[10];
     buf.fork(1, data);
     assert(equal(data, iota(1, 11)));
+    assert(buf.length == 2);
 }
 
 
