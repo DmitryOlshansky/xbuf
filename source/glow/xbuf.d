@@ -36,7 +36,7 @@ shared static this() {
 
 /// XBuf - extensible self-loading buffer
 struct XBuf {
-@nogc nothrow:
+nothrow:
 private:
     ubyte* ptr;
     uint _capacity;
@@ -47,7 +47,7 @@ private:
 public:
     @disable this(this);
     ///
-    this(uint capacity, uint minLoading, int delegate(ubyte[]) nothrow @nogc loader, uint growBy = 0) {
+    this(uint capacity, uint minLoading, int delegate(ubyte[]) nothrow loader, uint growBy = 0) {
         assert(capacity > 0);
         assert(minLoading > 0);
         assert(minLoading < capacity);
