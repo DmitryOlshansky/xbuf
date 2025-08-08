@@ -6,6 +6,9 @@ import core.stdc.string;
 version(linux) {
     extern(C) int getpagesize();
 }
+version(Windows) {
+    import core.sys.windows.winbase;
+}
 
 immutable uint PAGE_SIZE;
 
@@ -28,6 +31,11 @@ shared static this() {
             abort();
         }
         PAGE_SIZE = pagesize;
+    }
+    else version(Windows) {
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        PAGE_SIZE = si.dwPageSize;
     }
     else {
         static assert(0, "Cannot figure out the page size on this OS");
