@@ -73,12 +73,14 @@ public:
 
     ///
     ubyte opIndex()(size_t idx) {
+        pragma(inline, true);
         assert(idx < len);
         return ptr[idx];
     }
 
     ///
     ubyte[] opSlice()(size_t start, size_t end) {
+        pragma(inline, true);
         assert(start <= end);
         assert(end <= len);
         return ptr[start..end];
@@ -110,7 +112,10 @@ public:
     }
 
     ///
-    size_t length()() { return len; }
+    size_t length()() {
+        pragma(inline, true);
+        return len;
+    }
 
     ///
     size_t capacity()() { return _capacity; }
