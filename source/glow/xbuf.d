@@ -72,13 +72,13 @@ public:
     }
 
     ///
-    ubyte opIndex(size_t idx) {
+    ubyte opIndex()(size_t idx) {
         assert(idx < len);
         return ptr[idx];
     }
 
     ///
-    ubyte[] opSlice(size_t start, size_t end) {
+    ubyte[] opSlice()(size_t start, size_t end) {
         assert(start <= end);
         assert(end <= len);
         return ptr[start..end];
@@ -110,13 +110,13 @@ public:
     }
 
     ///
-    size_t length() { return len; }
+    size_t length()() { return len; }
 
     ///
-    size_t capacity() { return _capacity; }
+    size_t capacity()() { return _capacity; }
 
     ///
-    size_t minLoading(){ return _minLoading; }
+    size_t minLoading()(){ return _minLoading; }
 
     ///
     int load() {
