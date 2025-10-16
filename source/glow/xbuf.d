@@ -2,6 +2,7 @@ module glow.xbuf;
 
 import core.stdc.stdlib;
 import core.stdc.string;
+import core.memory;
 import std.algorithm;
 
 version(linux) {
@@ -43,6 +44,7 @@ shared static this() {
     }
 }
 
+/// Plain realloc-based buffer for plain old data types, serves as OutputRange
 struct Buffer(T)
 if(__traits(isPOD, T)) {
 private:
@@ -50,30 +52,53 @@ private:
 	size_t cap;
 	size_t offset;
 public:
+@trusted:
+pure:
 	this(size_t initial) {
-		mem = cast(T*)malloc(initial*T.sizeof);
+		mem = cast(T*)pureMalloc(initial*T.sizeof);
 		cap = initial;
 	}
 
+    /// Output range primitive, puts slice of data into buffer
 	void put(const(T)[] slice) {
+        pragma(inline, true);
 		this ~= slice;
 	}
 
+    /// Output range primitive, puts value into the buffer
+    void put(T value) {
+        pragma(inline, true);
+        if (offset == cap) {
+			extend(offset+1);
+		}
+        mem[offset++] = value;
+    }
+
+    /// Append operator, simillar to put
 	ref opOpAssign(string op:"~")(const(T)[] slice) {
-		if (offset + slice.length > cap) {
-			cap =  max(cap * 2, offset + slice.length);
-			mem = cast(T*) realloc(mem, cap * T.sizeof);
+		pragma(inline, true);
+        if (offset + slice.length > cap) {
+			extend(offset + slice.length);
 		}
 		memmove(mem + offset, slice.ptr, slice.length * T.sizeof);
 		offset += slice.length;
 	}
 
+    private void extend(size_t minRequired) {
+        pragma(inline, false);
+        cap =  max(cap * 2, minRequired);
+        mem = cast(T*) pureRealloc(mem, cap * T.sizeof);
+    }
+
+    /// reset accumulation
 	void clear() {
 		offset = 0;
 	}
 
+    /// length of accumulated buffer
 	size_t length() { return offset; }
 
+    /// A slice into accumulated buffer of data
 	T[] data() {
 		return mem[0..offset];
 	}
@@ -81,7 +106,7 @@ public:
 	@disable this(this);
 
 	~this() {
-		free(mem);
+		pureFree(mem);
 	}
 }
 
