@@ -2,6 +2,7 @@ module glow.xbuf;
 
 import core.stdc.stdlib;
 import core.stdc.string;
+import std.algorithm;
 
 version(linux) {
     extern(C) int getpagesize();
@@ -40,6 +41,48 @@ shared static this() {
     else {
         static assert(0, "Cannot figure out the page size on this OS");
     }
+}
+
+struct Buffer(T)
+if(__traits(isPOD, T)) {
+private:
+	T* mem;
+	size_t cap;
+	size_t offset;
+public:
+	this(size_t initial) {
+		mem = cast(T*)malloc(initial*T.sizeof);
+		cap = initial;
+	}
+
+	void put(const(T)[] slice) {
+		this ~= slice;
+	}
+
+	ref opOpAssign(string op:"~")(const(T)[] slice) {
+		if (offset + slice.length > cap) {
+			cap =  max(cap * 2, offset + slice.length);
+			mem = cast(T*) realloc(mem, cap * T.sizeof);
+		}
+		memmove(mem + offset, slice.ptr, slice.length * T.sizeof);
+		offset += slice.length;
+	}
+
+	void clear() {
+		offset = 0;
+	}
+
+	size_t length() { return offset; }
+
+	T[] data() {
+		return mem[0..offset];
+	}
+
+	@disable this(this);
+
+	~this() {
+		free(mem);
+	}
 }
 
 /// XBuf - extensible self-loading buffer
